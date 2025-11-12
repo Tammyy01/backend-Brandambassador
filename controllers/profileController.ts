@@ -10,86 +10,91 @@ import {
 
 export class ProfileController {
   // Complete user profile after ambassador application
-  static async completeProfile(req: Request, res: Response): Promise<Response> {
-    try {
-      const { applicationId } = req.params;
-      const { name, email, linkedinUrl, profileImage } = req.body;
+  // In profileController.ts - update the completeProfile method
+static async completeProfile(req: Request, res: Response): Promise<Response> {
+  try {
+    const { applicationId } = req.params;
+    const { name, email, linkedinUrl, profileImage } = req.body;
 
-      console.log(`📝 Completing profile for application: ${applicationId}`);
+    console.log(`📝 Completing profile for application: ${applicationId}`);
 
-      // Validate required fields
-      if (!name || !email) {
-        return sendBadRequestResponse(res, 'Name and email are required');
-      }
-
-      // Verify application exists and is submitted
-      const application = await AmbassadorApplication.findById(applicationId);
-      if (!application) {
-        return sendNotFoundResponse(res, 'Application not found');
-      }
-
-      if (application.status !== 'submitted') {
-        return sendBadRequestResponse(res, 'Please submit your ambassador application first');
-      }
-
-      // Generate QR code data (you can enhance this with actual QR generation)
-      const qrCodeData = JSON.stringify({
-        type: 'user_profile',
-        applicationId: applicationId,
-        name: name,
-        email: email,
-        timestamp: new Date().toISOString()
-      });
-
-      // Create or update user profile
-      let userProfile = await UserProfile.findOne({ applicationId });
-
-      if (userProfile) {
-        // Update existing profile
-        userProfile.name = name;
-        userProfile.email = email;
-        userProfile.linkedinUrl = linkedinUrl;
-        userProfile.profileImage = profileImage;
-        userProfile.qrCodeData = qrCodeData;
-        userProfile.isProfileCompleted = true;
-        userProfile.completedAt = new Date();
-      } else {
-        // Create new profile
-        userProfile = new UserProfile({
-          applicationId,
-          name,
-          email,
-          linkedinUrl,
-          profileImage,
-          qrCodeData,
-          qrCodeGenerated: true,
-          isProfileCompleted: true,
-          completedAt: new Date()
-        });
-      }
-
-      await userProfile.save();
-
-      console.log(`✅ Profile completed for application: ${applicationId}`);
-
-      return sendSuccessResponse(res, 'Profile completed successfully', {
-        profileCompleted: true,
-        userProfile: {
-          id: userProfile._id,
-          name: userProfile.name,
-          email: userProfile.email,
-          linkedinUrl: userProfile.linkedinUrl,
-          profileImage: userProfile.profileImage,
-          qrCodeData: userProfile.qrCodeData,
-          isProfileCompleted: userProfile.isProfileCompleted,
-          completedAt: userProfile.completedAt
-        }
-      });
-    } catch (error: any) {
-      console.error('❌ Complete profile error:', error);
-      return sendServerErrorResponse(res, 'Failed to complete profile: ' + error.message);
+    // Validate required fields
+    if (!name || !email) {
+      return sendBadRequestResponse(res, 'Name and email are required');
     }
+
+    // Verify application exists and is submitted
+    const application = await AmbassadorApplication.findById(applicationId);
+    if (!application) {
+      return sendNotFoundResponse(res, 'Application not found');
+    }
+
+    if (application.status !== 'submitted') {
+      return sendBadRequestResponse(res, 'Please submit your ambassador application first');
+    }
+
+    // ✅ GENERATE UNIQUE QR CODE DATA
+    const uniqueProfileId = `punch_${applicationId}_${Date.now()}`;
+    const qrCodeData = JSON.stringify({
+      type: 'punch_profile',
+      profileId: uniqueProfileId,
+      applicationId: applicationId,
+      name: name,
+      email: email,
+      linkedinUrl: linkedinUrl,
+      timestamp: new Date().toISOString()
+    });
+
+    // Create or update user profile
+    let userProfile = await UserProfile.findOne({ applicationId });
+
+    if (userProfile) {
+      // Update existing profile
+      userProfile.name = name;
+      userProfile.email = email;
+      userProfile.linkedinUrl = linkedinUrl;
+      userProfile.profileImage = profileImage;
+      userProfile.qrCodeData = qrCodeData;
+      userProfile.isProfileCompleted = true;
+      userProfile.completedAt = new Date();
+    } else {
+      // Create new profile
+      userProfile = new UserProfile({
+        applicationId,
+        name,
+        email,
+        linkedinUrl,
+        profileImage,
+        qrCodeData, // ✅ Now contains unique user data
+        qrCodeGenerated: true,
+        isProfileCompleted: true,
+        completedAt: new Date()
+      });
+    }
+
+    await userProfile.save();
+
+    console.log(`✅ Profile completed for application: ${applicationId}`);
+    console.log(`🔗 Unique QR data generated: ${uniqueProfileId}`);
+
+    return sendSuccessResponse(res, 'Profile completed successfully', {
+      profileCompleted: true,
+      userProfile: {
+        id: userProfile._id,
+        name: userProfile.name,
+        email: userProfile.email,
+        linkedinUrl: userProfile.linkedinUrl,
+        profileImage: userProfile.profileImage,
+        qrCodeData: userProfile.qrCodeData, // ✅ This is now unique per user
+        isProfileCompleted: userProfile.isProfileCompleted,
+        completedAt: userProfile.completedAt
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ Complete profile error:', error);
+    return sendServerErrorResponse(res, 'Failed to complete profile: ' + error.message);
   }
+}
 
   // Get user profile by application ID
   static async getProfile(req: Request, res: Response): Promise<Response> {
