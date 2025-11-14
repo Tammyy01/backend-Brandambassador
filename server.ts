@@ -5,6 +5,8 @@ import applicationRoutes from './routes/applicationRoutes';
 import { verifyTwilioConfig } from './services/smsService';
 import loginRoutes from './routes/loginRoutes';
 import profileRoutes from './routes/profileRoutes';
+import logoutRoutes from './routes/logoutRoutes';
+import contactsRoutes from './routes/contactsRoutes';
 
 dotenv.config();
 
@@ -54,6 +56,8 @@ app.use('/api/uploads', express.static('uploads'));
 app.use('/api', applicationRoutes);
 app.use('/api', profileRoutes);
 app.use('/api', loginRoutes);
+app.use('/api', logoutRoutes);
+app.use('/api', contactsRoutes);
 
 // Basic health check route
 app.get('/api/health', (req, res) => {
