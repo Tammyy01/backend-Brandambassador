@@ -45,6 +45,7 @@ export const groqChatCompletion = async (req: Request, res: Response) => {
 
     const completion = await client.chat.completions.create({ ...request, stream: false });
     const text = completion?.choices?.[0]?.message?.content ?? '';
+    console.log('Groq completion:', { prompt: finalPrompt, text });
     return res.status(200).json({ success: true, text, completion });
   } catch (error: any) {
     console.error('Groq chat error:', error);
