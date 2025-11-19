@@ -10,7 +10,8 @@ export const groqChatCompletion = async (req: Request, res: Response) => {
 
     const prompt: string = (req.body?.prompt ?? '').toString();
     const instruction = 'extract fields, first name, last name, email, companyName, address from the data';
-    const finalPrompt = `${prompt}\n\n${instruction}`.trim();
+    const augment: boolean = req.body?.augment !== false;
+    const finalPrompt = augment ? `${prompt}\n\n${instruction}`.trim() : prompt.trim();
     const stream: boolean = Boolean(req.body?.stream);
 
     if (!prompt || !prompt.trim()) {
